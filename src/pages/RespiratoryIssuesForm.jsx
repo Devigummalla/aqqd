@@ -46,7 +46,7 @@ export default function ResponsiveHorizontalForm() {
   const validateForm = () => {
     if (!form.name.trim()) return false;
     if (!form.age || isNaN(form.age) || Number(form.age) < 0) return false;
-    if (!form.symptoms.length) return false;
+    // Symptoms are now optional
     if (!form.consent) return false;
     return true;
   };
@@ -54,7 +54,7 @@ export default function ResponsiveHorizontalForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      toast.error("Please fill all required fields and give consent.");
+      toast.error("Please provide your name, age, and consent to continue.");
       return;
     }
     setSubmitting(true);

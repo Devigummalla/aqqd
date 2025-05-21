@@ -35,11 +35,9 @@ router.post('/assessment', auth, async (req, res) => {
       });
     }
 
-    if (!Array.isArray(symptoms) || symptoms.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'At least one symptom must be selected'
-      });
+    // Make symptoms optional, ensure it's always an array
+    if (!Array.isArray(symptoms)) {
+      symptoms = [];
     }
 
     if (!consent) {

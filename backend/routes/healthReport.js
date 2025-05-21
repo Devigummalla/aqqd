@@ -61,16 +61,21 @@ router.post('/generate', auth, async (req, res) => {
       });
     }
 
-    if (!healthAssessment.name || !healthAssessment.age || !healthAssessment.symptoms) {
-      console.log('Invalid health assessment data:', { 
+    // Only require name and age, symptoms are optional
+    if (!healthAssessment.name || !healthAssessment.age) {
+      console.log('Missing required health assessment data:', { 
         name: healthAssessment.name, 
-        age: healthAssessment.age, 
-        symptoms: healthAssessment.symptoms 
+        age: healthAssessment.age
       });
       return res.status(400).json({
         success: false,
-        message: 'Your health assessment is incomplete. Please update it with all required information.'
+        message: 'Your health assessment needs at least your name and age. Please update it.'
       });
+    }
+    
+    // Ensure symptoms is always an array, even if empty
+    if (!healthAssessment.symptoms) {
+      healthAssessment.symptoms = [];
     }
 
 
@@ -106,12 +111,12 @@ router.post('/generate', auth, async (req, res) => {
     User Health Profile:
     - Name: ${healthAssessment.name}
     - Age: ${healthAssessment.age} years old
-    - Reported Health Issues: ${healthAssessment.symptoms.join(', ')}
+    ${healthAssessment.symptoms.length > 0 ? `- Reported Health Issues: ${healthAssessment.symptoms.join(', ')}` : '- No specific health issues reported'}
     ${healthAssessment.other ? `- Additional Health Information: ${healthAssessment.other}` : ''}
     
     Please consider the following in your recommendations:
     1. Age-specific vulnerabilities (${healthAssessment.age} years old)
-    2. Reported health issues: ${healthAssessment.symptoms.join(', ')}
+    2. ${healthAssessment.symptoms.length > 0 ? `Reported health issues: ${healthAssessment.symptoms.join(', ')}` : 'General health considerations as no specific issues were reported'}
     3. Current AQI level and pollutants
     4. Any additional health information provided
 
@@ -129,7 +134,7 @@ router.post('/generate', auth, async (req, res) => {
         "Detailed recommendations specifically tailored for the user's age group"
       ],
       "healthSpecificRecommendations": [
-        "Recommendations based on reported symptoms and their severity"
+        "${healthAssessment.symptoms.length > 0 ? 'Recommendations based on reported symptoms and their severity' : 'General health recommendations based on age and air quality'}"
       ],
       "emergencyWarnings": [
         "Include if AQI > 150 or severe symptoms present"
@@ -140,7 +145,10 @@ router.post('/generate', auth, async (req, res) => {
         "exercise": "Exercise recommendations based on age and AQI"
       },
       "protectiveMeasures": [
-        "Specific protective measures based on age group and symptoms"
+        "Specific protective measures based on age group ${healthAssessment.symptoms.length > 0 ? 'and symptoms' : 'for general protection'}"
+      ],
+      "medicineRecommendations": [
+        "${healthAssessment.symptoms.length > 0 ? 'Over-the-counter or prescribed medications that may help with reported symptoms in current air quality conditions' : 'General guidance on medications that might be helpful in current air quality conditions based on age'}"
       ]
     }
 
@@ -150,17 +158,26 @@ router.post('/generate', auth, async (req, res) => {
     - For adults (20-59): Consider work-related exposure and exercise modifications
     - For seniors (60+): Emphasize respiratory protection and indoor air quality
 
-    If any of these symptoms are reported, include specific warnings:
+    ${healthAssessment.symptoms.length > 0 ? `If any of these symptoms are reported, include specific warnings:
     - 'Shortness of breath': Immediate medical attention may be needed
     - 'Chest tightness': Could indicate serious respiratory distress
-    - 'Wheezing': May require bronchodilator use if prescribed
+    - 'Wheezing': May require bronchodilator use if prescribed` : `Include general warnings about symptoms that might develop in current air quality conditions and when to seek medical attention`}
 
     For high AQI levels (>150):
     - Include immediate protective actions
     - Specify indoor air quality measures
     - List emergency warning signs
 
-    Make all recommendations specific, actionable, and appropriate for the user's exact age.`;
+    Make all recommendations specific, actionable, and appropriate for the user's exact age.
+    
+    For medicine recommendations:
+    - ${healthAssessment.symptoms.length > 0 ? 'Include appropriate over-the-counter medications for symptom relief based on age and reported symptoms' : 'Suggest general preventive measures and medications that might be helpful based on age and air quality'}
+    - For respiratory conditions like asthma, suggest appropriate inhaler usage timing based on air quality
+    - Include clear disclaimers that these are general suggestions and not medical prescriptions
+    - Specify if certain medications should be avoided in current air quality conditions
+    - Recommend when to consult a healthcare provider instead of self-medicating
+    
+    IMPORTANT: Always include a disclaimer that medicine recommendations are general guidance only and users should consult healthcare professionals before taking any medication.`;
 
     console.log('Sending prompt to Gemini API');
     
